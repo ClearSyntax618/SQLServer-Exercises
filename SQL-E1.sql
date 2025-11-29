@@ -172,7 +172,7 @@ INSERT INTO Provisto_por (CodMat, CodProv) VALUES
 SELECT Nombre FROM Proveedor pv WHERE pv.Ciudad = 'La Plata'
 
 -- 2. Listar los números de artículos cuyo precio sea inferior a $8900. 
-SELECT COUNT(*) as Cantidad_de_Articulos FROM Articulo art WHERE art.Precio < 8900
+SELECT COUNT(*) as 'Cantidad de Articulos' FROM Articulo art WHERE art.Precio < 8900
 
 -- 3. Listar los responsables de los almacenes. 
 SELECT Responsable FROM Almacen alm;
@@ -206,7 +206,7 @@ JOIN Articulo art ON art.CodArt = cp.CodArt
 WHERE art.Precio > 2300 OR cp.CodMat = 'MAT001'
 
 -- 9. Listar los materiales, código y descripción, provistos por proveedores de la ciudad de Rosario. 
-SELECT mat.CodMat as CodMaterial, mat.Descripcion FROM Provisto_por pp
+SELECT mat.CodMat as 'Codigo de Material', mat.Descripcion FROM Provisto_por pp
 JOIN Material mat ON mat.CodMat = pp.CodMat
 JOIN Proveedor prv ON prv.CodProv = pp.CodProv
 WHERE prv.Ciudad = 'Rosario'
@@ -229,12 +229,65 @@ JOIN Tiene tn ON  tn.CodArt = cp.CodArt
 JOIN Almacen alm ON alm.Nro = tn.Nro
 WHERE alm.Responsable = 'Juan Pérez';
 
+-- 13. Listar códigos y descripciones de los artículos compuestos por al menos un material 
+SELECT DISTINCT art.CodArt as 'Codigo Articulo', art.Descripcion FROM Compuesto_por cp
+JOIN Articulo art ON art.CodArt = cp.CodArt
+
+-- 14. Hallar los códigos y nombres de los proveedores que proveen al menos un material que se usa en algún artículo cuyo precio es mayor a $100.
+SELECT DISTINCT prv.CodProv, prv.Nombre FROM Provisto_por pp
+JOIN Proveedor prv ON prv.CodProv = pp.CodProv
+JOIN Compuesto_por cp ON cp.CodMat = pp.CodMat
+JOIN Articulo art ON art.CodArt = cp.CodArt
+WHERE art.Precio > 100;
+
+-- 15. Listar los números de almacenes que tienen todos los artículos que incluyen el material con código MAT004.
+
+-- ============================
+--	CONSULTAR
+-- ============================
+SELECT DISTINCT alm.Nro as 'Numero de almacenes' FROM Tiene tn
+JOIN Almacen alm ON alm.Nro = tn.Nro
+JOIN Compuesto_por cp ON cp.CodArt = tn.CodArt
+WHERE cp.CodMat = 'MAT004';
 
 
+-- 16. Listar los proveedores de Mendoza que sean únicos proveedores de algún material. 
+SELECT DISTINCT pp.CodProv FROM Provisto_por pp
+JOIN Proveedor prv ON prv.CodProv = pp.CodProv
+WHERE prv.Ciudad = 'Mendoza' AND pp.CodMat IN (
+	SELECT CodMat FROM Provisto_por
+	GROUP BY CodMat
+	HAVING COUNT(CodProv) = 1
+)
 
+-- 17. Listar el/los artículo/s de mayor precio. 
+SELECT art.CodArt, art.Descripcion, art.Precio as 'Articulo de mayor precio' FROM Articulo art
+WHERE art.Precio = (SELECT MAX(Precio) FROM Articulo)
 
+-- 18. Listar el/los artículo/s de menor precio. 
+SELECT art.CodArt, art.Descripcion, art.Precio as 'Articulo de mayor precio' FROM Articulo art
+WHERE art.Precio = (SELECT MIN(Precio) FROM Articulo)
 
+-- 19. Listar el promedio de precios de los artículos en cada almacén. 
+SELECT alm.Nro as 'Almacen', AVG(art.Precio) AS 'Promedio'
+FROM Articulo art
+JOIN Tiene tn ON tn.CodArt = art.CodArt
+JOIN Almacen alm ON alm.Nro = tn.Nro
+GROUP BY alm.Nro;
 
+-- 20. Listar los almacenes que almacenan la mayor cantidad de artículos. 
+SELECT alm.Nro as 'Almacen', COUNT(art.CodArt) as 'Cantidad de articulos' FROM Tiene tn
+JOIN Almacen alm ON alm.Nro = tn.Nro
+JOIN Articulo art ON art.CodArt = tn.CodArt
+GROUP BY alm.Nro
+HAVING COUNT(art.CodArt) = (
+	SELECT MAX(Cantidad)
+    FROM (
+        SELECT COUNT(CodArt) AS Cantidad
+        FROM Tiene
+        GROUP BY Nro
+    ) AS Conteos
+)
 
 
 
